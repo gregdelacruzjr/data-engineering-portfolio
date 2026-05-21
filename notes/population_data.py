@@ -40,6 +40,11 @@ def load_and_clean(filepath):
     df["Population"] = df["Population"].astype(int)
     return df
 
+def save_to_csv(df, filepath):
+    """Export clean DataFrame to CSV file."""
+    df.to_csv(filepath, index=False)
+    print(f"✓ Clean data saved to {filepath}")
+
 def calculate_average_population(records):
     """Calculate average population excluding None values."""
     total = 0
@@ -69,6 +74,10 @@ def main():
 
     # Load and clean with pandas
     df = load_and_clean("notes/population_raw.json")
+
+    # Export to CSV
+    save_to_csv(df, "notes/population_clean.csv")
+
     print("\nClean DataFrame:")
     print(df.to_string(index=False))
 
