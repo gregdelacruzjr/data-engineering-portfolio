@@ -1,4 +1,6 @@
 import requests
+import json
+import pandas as pd
 
 # World Bank API base URL (v2)
 # Documentation: https://datahelpdesk.worldbank.org/knowledgebase/articles/898590
@@ -23,6 +25,21 @@ def get_population_data():
     data = response.json()
     return data[1]
 
+def save_raw_json(records):
+    """Save raw API response to a JSON file for raw data preservation."""
+    with open("notes/population_raw.json", "w") as f:
+        json.dump(records, f, indent=2)
+    print("✓ Raw data saved to notes/population_raw.json")
+
+def load_and_clean(filepath):
+    """Load JSON file into a pandas DataFrame and clean it."""
+    df = pd.read_json(filepath)
+    df = df[["date", "value"]]
+    df.columns = ["Year", "Population"]
+    df = df.dropna()
+    df["Population"] = df["Population"].astype(int)
+    return df
+
 def calculate_average_population(records):
     """Calculate average population excluding None values."""
     total = 0
@@ -45,14 +62,21 @@ def get_population_growth(records):
 def main():
     print("Philippine Population Analysis")
     print("=" * 40)
+
+    # Fetch and save raw data
     records = get_population_data()
+    save_raw_json(records)
+
+    # Load and clean with pandas
+    df = load_and_clean("notes/population_raw.json")
+    print("\nClean DataFrame:")
+    print(df.to_string(index=False))
+
+    # Summary statistics
     average = calculate_average_population(records)
     growth = get_population_growth(records)
-    print(f"Average Population (last 10 years): {average:,.0f}")
+    print(f"\nAverage Population (last 10 years): {average:,.0f}")
     print(f"Population Growth (newest - oldest): {growth:,.0f}")
-    for record in records:
-        if record["value"] is not None:
-            print(f"  {record['date']}: {record['value']:,.0f}")
 
 if __name__ == "__main__":
     main()
