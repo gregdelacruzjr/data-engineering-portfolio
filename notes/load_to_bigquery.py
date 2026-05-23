@@ -12,26 +12,33 @@ TABLE_REF = f"{PROJECT_ID}.{DATASET_ID}.{TABLE_ID}"
 
 def load_csv_to_bigquery(filepath):
     """Load a CSV file into a BigQuery table."""
-    
-    # Initialize BigQuery client — uses ADC automatically
-    client = bigquery.Client(project=PROJECT_ID)
-    
-    # Load CSV into pandas DataFrame first
-    df = pd.read_csv(filepath)
-    print(f"✓ CSV loaded — {len(df)} rows, {len(df.columns)} columns")
-    print(df)
-    
-    # Define load job configuration
-    job_config = bigquery.LoadJobConfig(
-        write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE
-    )
-    
-    # Load DataFrame into BigQuery
-    job = client.load_table_from_dataframe(df, TABLE_REF, job_config=job_config)
-    job.result()  # Wait for job to complete
-    
-    print(f"\n✓ Data loaded into BigQuery table: {TABLE_REF}")
-    print(f"✓ {len(df)} rows written successfully")
+    try:
+        # Initialize BigQuery client — uses ADC automatically
+        client = bigquery.Client(project=PROJECT_ID)
+
+        # Load CSV into pandas DataFrame first
+        df = pd.read_csv(filepath)
+        print(f"✓ CSV loaded — {len(df)} rows, {len(df.columns)} columns")
+        print(df)
+
+        # Define load job configuration
+        job_config = bigquery.LoadJobConfig(
+            write_disposition=bigquery.WriteDisposition.WRITE_TRUNCATE
+        )
+
+        # Load DataFrame into BigQuery
+        job = client.load_table_from_dataframe(df, TABLE_REF, job_config=job_config)
+        job.result()  # Wait for job to complete
+
+        print(f"\n✓ Data loaded into BigQuery table: {TABLE_REF}")
+        print(f"✓ {len(df)} rows written successfully")
+
+    except FileNotFoundError:
+        print(f"✗ Error: CSV file not found at {filepath}")
+        print("  Make sure to run population_data.py first to generate the CSV.")
+
+    except Exception as e:
+        print(f"✗ Unexpected error: {e}")
 
 def main():
     print("Loading Population Data to BigQuery")

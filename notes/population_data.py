@@ -16,14 +16,32 @@ INDICATOR_POPULATION = "SP.POP.TOTL"
 
 def get_population_data():
     """Fetch total population data for the Philippines from the World Bank API."""
-    url = f"{BASE_URL}/country/{COUNTRY_CODE}/indicator/{INDICATOR_POPULATION}"
-    params = {
-        "format": "json",
-        "mrv": 10
-    }
-    response = requests.get(url, params=params, timeout=10)
-    data = response.json()
-    return data[1]
+    try:
+        url = f"{BASE_URL}/country/{COUNTRY_CODE}/indicator/{INDICATOR_POPULATION}"
+        params = {
+            "format": "json",
+            "mrv": 10
+        }
+        response = requests.get(url, params=params, timeout=10)
+        response.raise_for_status()  # raises error if status code is 4xx or 5xx
+        data = response.json()
+        return data[1]
+
+    except requests.exceptions.Timeout:
+        print("✗ Error: API request timed out. Check your internet connection.")
+        return None
+
+    except requests.exceptions.ConnectionError:
+        print("✗ Error: Could not connect to the World Bank API.")
+        return None
+
+    except requests.exceptions.HTTPError as e:
+        print(f"✗ Error: API returned an error — {e}")
+        return None
+
+    except Exception as e:
+        print(f"✗ Unexpected error: {e}")
+        return None
 
 def save_raw_json(records):
     """Save raw API response to a JSON file for raw data preservation."""
@@ -68,20 +86,17 @@ def main():
     print("Philippine Population Analysis")
     print("=" * 40)
 
-    # Fetch and save raw data
     records = get_population_data()
+
+    if records is None:
+        print("✗ Could not retrieve data. Exiting.")
+        return
+
     save_raw_json(records)
-
-    # Load and clean with pandas
     df = load_and_clean("notes/population_raw.json")
-
-    # Export to CSV
-    save_to_csv(df, "notes/population_clean.csv")
-
     print("\nClean DataFrame:")
     print(df.to_string(index=False))
 
-    # Summary statistics
     average = calculate_average_population(records)
     growth = get_population_growth(records)
     print(f"\nAverage Population (last 10 years): {average:,.0f}")
